@@ -234,6 +234,34 @@ body {
 .stage[data-phase="urgent"] .seg,
 .stage[data-phase="critical"] .seg { pointer-events: none; }
 
+/* Phase-driven hue shift — cascades to ring gradient, halo, and accents */
+.stage[data-phase="warming"]  { --hue-a:  44; --hue-b:  28; }
+.stage[data-phase="urgent"]   { --hue-a:  24; --hue-b:  12; }
+.stage[data-phase="critical"] { --hue-a:  10; --hue-b: 354; }
+
+/* Digit color & glow follow the phase */
+.display__time { transition: color 600ms ease, text-shadow 600ms ease; }
+.stage[data-phase="warming"] .display__time {
+  color: hsl(var(--hue-a) 90% 82%);
+  text-shadow: 0 0 28px hsl(var(--hue-a) 90% 55% / 0.45);
+}
+.stage[data-phase="urgent"] .display__time {
+  color: hsl(var(--hue-a) 95% 78%);
+  text-shadow: 0 0 36px hsl(var(--hue-a) 95% 55% / 0.6);
+}
+.stage[data-phase="critical"] .display__time {
+  color: hsl(var(--hue-a) 100% 72%);
+  text-shadow:
+    0 0 28px hsl(var(--hue-a) 100% 55% / 0.7),
+    0 0 60px hsl(var(--hue-a) 100% 50% / 0.4);
+  animation: seg-pulse 0.9s ease-in-out infinite;
+}
+@keyframes seg-pulse {
+  0%, 100% { transform: scale(1);     filter: none; }
+  18%      { transform: scale(1.035); filter: brightness(1.15); }
+  55%      { transform: scale(1.015); filter: brightness(1.05); }
+}
+
 .colon {
   display: inline-block;
   width: 0.4em; text-align: center;
@@ -264,6 +292,7 @@ body {
   display: grid; place-items: center;
   text-align: center;
   pointer-events: none;
+  z-index: 4;
   opacity: 0;
   transform: scale(0.92);
   transition: opacity 600ms var(--ease-out-expo),
@@ -275,6 +304,8 @@ body {
   font-weight: 300;
   font-size: clamp(72px, 16vmin, 160px);
   letter-spacing: 0.06em;
+  /* compensate for trailing letter-spacing so visible glyphs are truly centered */
+  padding-left: 0.06em;
   text-transform: uppercase;
   background: linear-gradient(180deg, #fff 0%, hsl(var(--hue-a) 90% 80%) 100%);
   -webkit-background-clip: text; background-clip: text;

@@ -20,6 +20,8 @@
 
   const RING_CIRC = 2 * Math.PI * 138;
   const MAX_TOTAL = 99 * 60 + 59;
+  const STORAGE_KEY = 'ember.lastDurationSec';
+  const BASE_TITLE = 'Ember — a countdown that breathes';
 
   const state = {
     mode: 'idle',
@@ -76,6 +78,33 @@
   }
   function setStatus(text) { statusLbl.textContent = text; }
 
+  function saveDuration(sec) {
+    try { localStorage.setItem(STORAGE_KEY, String(sec)); } catch (_) { /* storage blocked */ }
+  }
+  function loadDuration() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw == null) return null;
+      const n = parseInt(raw, 10);
+      if (!Number.isFinite(n) || n <= 0 || n > MAX_TOTAL) return null;
+      return n;
+    } catch (_) { return null; }
+  }
+
+  function setTitle(remainMs) {
+    if (state.mode === 'running' || state.mode === 'paused') {
+      const totalSec = Math.ceil(Math.max(0, remainMs) / 1000);
+      const m = Math.floor(totalSec / 60);
+      const s = totalSec % 60;
+      const prefix = state.mode === 'paused' ? '❚❚ ' : '';
+      document.title = `${prefix}${pad(m)}:${pad(s)} · Ember`;
+    } else if (state.mode === 'done') {
+      document.title = '✦ time · Ember';
+    } else {
+      document.title = BASE_TITLE;
+    }
+  }
+
   function setPhaseFromRemaining() {
     if (state.mode === 'done')   { stage.dataset.phase = 'done';    return; }
     if (state.mode === 'idle')   { stage.dataset.phase = 'idle';    return; }
@@ -131,6 +160,8 @@
     } else {
       metaLeft.textContent = 'running';
     }
+
+    setTitle(ms);
   }
 
   function tick(now) {
@@ -283,6 +314,7 @@
     setPhaseFromRemaining();
     render(state.remainMs);
     syncPresetActive();
+    if (sec > 0) saveDuration(sec);
   }
 
   function nudgeInvalid() {
@@ -448,6 +480,14 @@
 
   makeEditable(segM, 99);
   makeEditable(segS, 59);
+
+  const savedSec = loadDuration();
+  if (savedSec != null) {
+    state.totalMs = savedSec * 1000;
+    state.remainMs = state.totalMs;
+    writeSegments(savedSec);
+  }
+
   syncPresetActive();
   render(state.remainMs);
   setPhaseFromRemaining();
